@@ -1,0 +1,31 @@
+# ============================================================
+#  SCRIPTED GUI
+#  Bottone "Parla con il Leader (IA)" nella schermata diplomatica
+#  della nazione selezionata (tasto destro -> Diplomazia).
+#    context_type = selected_country_context:
+#      - default scope (This) = nazione selezionata
+#      - ROOT = il giocatore
+# ============================================================
+scripted_gui = {
+
+	ai_diplo_diplo_button = {
+		context_type = selected_country_context
+		parent_window_token = selected_country_view_diplomacy
+		window_name = "ai_diplo_diplo_button_window"
+
+		visible = {
+			ROOT = { is_ai = no }
+			NOT = { tag = ROOT }
+		}
+
+		effects = {
+			ai_diplo_talk_button_click = {
+				ROOT = { ai_diplo_export_state = yes }
+				ROOT = { ai_diplo_export_world = yes }
+				ROOT = { ai_diplo_export_states = yes }
+				ai_diplo_export_tags = yes
+				log = "AIDIPLO_OPEN|target=[This.GetTag]|tname=[This.GetName]|tleader=[This.GetLeader]|player=[ROOT.GetTag]"
+			}
+		}
+	}
+}

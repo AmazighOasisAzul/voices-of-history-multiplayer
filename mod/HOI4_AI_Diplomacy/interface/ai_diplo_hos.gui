@@ -1,0 +1,38 @@
+guiTypes = {
+
+	# --------------------------------------------------------
+	#  UI SOVRAPPOSTA: nome del CAPO DI STATO scelto dal player.
+	#  Si aggancia alla schermata POLITICA (parent_window_token = politics_tab) e mostra
+	#  il testo della chiave loc "AIDIPLO_LEADER", riscritta a runtime dal middleware.
+	#  Ha uno SFONDO (GFX_button_261x34, lo stesso sprite del bottone diplomazia che
+	#  esiste di sicuro) cosi' il testo e' SEMPRE leggibile e copre il nome vanilla.
+	#
+	#  >> Se non e' sopra il nome del leader, regola SOLO  position = { x = .. y = .. }
+	#     della finestra qui sotto (come per il bottone in ai_diplo.gui).
+	# --------------------------------------------------------
+	containerWindowType = {
+		name = "ai_diplo_hos_window"
+		position = { x = 12 y = 250 }
+		size = { width = 261 height = 34 }
+		clipping = no
+		Orientation = upper_left
+
+		iconType = {
+			name = "ai_diplo_hos_bg"
+			spriteType = "GFX_button_261x34"
+			position = { x = 0 y = 0 }
+			Orientation = upper_left
+		}
+
+		instantTextBoxType = {
+			name = "ai_diplo_hos_text"
+			position = { x = 10 y = 9 }
+			font = "hoi_18b"
+			text = "AIDIPLO_LEADER"
+			maxWidth = 240
+			maxHeight = 22
+			format = left
+			Orientation = upper_left
+		}
+	}
+}

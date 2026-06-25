@@ -1,0 +1,4 @@
+ai_diplo_category = {
+	icon = generic_political_discontent
+	priority = 1000
+}

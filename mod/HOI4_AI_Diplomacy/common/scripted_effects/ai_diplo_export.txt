@@ -1,0 +1,235 @@
+# ============================================================
+#  AI DIPLOMACY - EXPORT DELLO STATO DI GIOCO
+#  Tutto viene scritto su UNA riga del game.log con il prefisso
+#  AIDIPLO_STATE| in formato chiave=valore separato da pipe |.
+#  Il middleware Python fa il parsing di questa riga.
+#
+#  NOTA TECNICA: alcuni "token" numerici (world_tension, manpower)
+#  possono cambiare nome tra le versioni di HoI4. Se al caricamento
+#  vedi un errore su una di queste righe, commentala con # e il
+#  resto continuera' a funzionare.
+# ============================================================
+ai_diplo_export_state = {
+
+	# --- Ideologia di governo (codice: 1 fasc / 2 com / 3 dem / 4 non-all) ---
+	set_temp_variable = { aid_ideo = 0 }
+	if = { limit = { has_government = fascism }     set_temp_variable = { aid_ideo = 1 } }
+	if = { limit = { has_government = communism }   set_temp_variable = { aid_ideo = 2 } }
+	if = { limit = { has_government = democratic }  set_temp_variable = { aid_ideo = 3 } }
+	if = { limit = { has_government = neutrality }  set_temp_variable = { aid_ideo = 4 } }
+
+	# --- Statistiche nazionali ---
+	set_temp_variable = { aid_stab = stability }
+	multiply_temp_variable = { aid_stab = 100 }
+
+	set_temp_variable = { aid_ws = war_support }
+	multiply_temp_variable = { aid_ws = 100 }
+
+	set_temp_variable = { aid_pp = political_power }
+
+	set_temp_variable = { aid_civ = num_of_civilian_factories }
+	set_temp_variable = { aid_mil = num_of_military_factories }
+	set_temp_variable = { aid_nav = num_of_naval_factories }
+
+	# numero di divisioni controllate (forza militare grezza)
+	set_temp_variable = { aid_div = num_divisions }
+
+	# manpower disponibile (pool). Se da errore, commenta le 2 righe sotto.
+	set_temp_variable = { aid_mp = manpower }
+
+	# --- Situazione globale ---
+	set_temp_variable = { aid_wt = world_tension }
+	multiply_temp_variable = { aid_wt = 100 }
+
+	set_temp_variable = { aid_war = 0 }
+	if = { limit = { has_war = yes } set_temp_variable = { aid_war = 1 } }
+
+	set_temp_variable = { aid_faction = 0 }
+	if = { limit = { is_in_faction = yes } set_temp_variable = { aid_faction = 1 } }
+
+	set_temp_variable = { aid_facleader = 0 }
+	if = { limit = { is_faction_leader = yes } set_temp_variable = { aid_facleader = 1 } }
+
+	set_temp_variable = { aid_majors = num_of_controlled_states }
+
+	# --- SITUAZIONE DI GUERRA (per far capire all'IA se si sta vincendo o perdendo) ---
+	# Salviamo la nazione come scope per usarla dentro i loop su stati/paesi.
+	save_event_target_as = aid_self
+
+	# Core occupati dal nemico (stati che sono CORE nostri ma NON sotto nostro controllo)
+	set_variable = { aid_cores_lost = 0 }
+	# Stati che CONTROLLIAMO ma che NON sono nostri core (terra nemica occupata da noi)
+	set_variable = { aid_enemy_land = 0 }
+	every_state = {
+		limit = { is_core_of = event_target:aid_self NOT = { is_controlled_by = event_target:aid_self } }
+		event_target:aid_self = { add_to_variable = { aid_cores_lost = 1 } }
+	}
+	every_state = {
+		limit = { is_controlled_by = event_target:aid_self NOT = { is_core_of = event_target:aid_self } }
+		event_target:aid_self = { add_to_variable = { aid_enemy_land = 1 } }
+	}
+
+	# Capitale ancora sotto controllo? (1 = si, 0 = caduta)
+	set_variable = { aid_cap = 0 }
+	capital_scope = {
+		if = {
+			limit = { is_controlled_by = event_target:aid_self }
+			event_target:aid_self = { set_variable = { aid_cap = 1 } }
+		}
+	}
+
+	# Numero di nazioni in guerra CONTRO di noi e numero di alleati in fazione
+	set_variable = { aid_enemies = 0 }
+	set_variable = { aid_allies = 0 }
+	every_country = {
+		limit = { has_war_with = event_target:aid_self }
+		event_target:aid_self = { add_to_variable = { aid_enemies = 1 } }
+	}
+	if = {
+		limit = { is_in_faction = yes }
+		every_country = {
+			limit = { is_in_faction_with = event_target:aid_self NOT = { tag = event_target:aid_self } }
+			event_target:aid_self = { add_to_variable = { aid_allies = 1 } }
+		}
+	}
+
+	# Sudditi (fantocci/satelliti) del player e stato di vassallaggio del player stesso
+	set_variable = { aid_subjects = 0 }
+	every_country = {
+		limit = { is_subject_of = event_target:aid_self }
+		event_target:aid_self = { add_to_variable = { aid_subjects = 1 } }
+	}
+	set_temp_variable = { aid_issubject = 0 }
+	if = { limit = { is_subject = yes } set_temp_variable = { aid_issubject = 1 } }
+
+	# --- Scrittura della riga di stato nel game.log ---
+	log = "AIDIPLO_STATE|date=[GetDateText]|day=[?aidiplo_day|0]|gid=[?aidiplo_gameid|0]|tag=[This.GetTag]|name=[This.GetName]|leader=[This.GetLeader]|ideo=[?aid_ideo|0]|stab=[?aid_stab|0]|ws=[?aid_ws|0]|pp=[?aid_pp|0]|civ=[?aid_civ|0]|mil=[?aid_mil|0]|nav=[?aid_nav|0]|div=[?aid_div|0]|mp=[?aid_mp|0]|wt=[?aid_wt|0]|war=[?aid_war|0]|faction=[?aid_faction|0]|facleader=[?aid_facleader|0]|states=[?aid_majors|0]|subjects=[?aid_subjects|0]|is_subject=[?aid_issubject|0]|cores_lost=[?aid_cores_lost|0]|enemy_land=[?aid_enemy_land|0]|cap=[?aid_cap|0]|enemies=[?aid_enemies|0]|allies=[?aid_allies|0]"
+}
+
+# ============================================================
+#  EXPORT TABELLA NOME->TAG di TUTTE le nazioni esistenti
+#  (anche moddate / nuove nazioni). Il middleware la usa per
+#  risolvere in automatico i tag dai nomi citati nei dialoghi.
+#  Chiamato all'apertura di un canale (vedi decisions/scripted_guis).
+# ============================================================
+ai_diplo_export_tags = {
+	every_country = {
+		limit = { exists = yes }
+		log = "AIDIPLO_TAG|tag=[This.GetTag]|name=[This.GetName]"
+	}
+}
+
+# ============================================================
+#  EXPORT "SNAPSHOT DEL MONDO": una riga AIDIPLO_NATION per ogni
+#  nazione RILEVANTE per il player (grandi potenze, vicini, nemici,
+#  membri della fazione, sudditi). Solo letture di scope-paese a
+#  basso costo (NIENTE loop sugli stati per nazione) -> nessun lag.
+#  Cosi' l'IA conosce SEMPRE lo stato reale del mondo (ideologia,
+#  stabilita', guerra, capitolazione, industria, divisioni...) e non
+#  deve inventarsi nulla. Va chiamato dallo scope del PLAYER.
+# ============================================================
+ai_diplo_export_world = {
+	save_event_target_as = aid_self
+	# TUTTE le nazioni esistenti (nessun filtro di vicinanza/rilevanza): l'IA deve sapere
+	# di tutti. Sono solo letture di scope-paese a basso costo (nessun loop sugli stati).
+	every_country = {
+		limit = {
+			exists = yes
+			NOT = { tag = event_target:aid_self }
+		}
+		ai_diplo_log_country = yes
+	}
+}
+
+# Versione LEGGERA per l'uso GIORNALIERO: solo le nazioni RILEVANTI per il player (grandi
+# potenze, vicini, nemici, fazione, sudditi). Cosi' ogni giorno l'IA ha il contesto-mondo
+# che conta SEMPRE aggiornato, senza gonfiare il game.log con tutte le ~150 nazioni ogni
+# giorno (quelle restano nell'export COMPLETO su apertura canale / avvio).
+ai_diplo_export_world_key = {
+	save_event_target_as = aid_self
+	every_country = {
+		limit = {
+			exists = yes
+			NOT = { tag = event_target:aid_self }
+			OR = {
+				is_major = yes
+				is_neighbor_of = event_target:aid_self
+				has_war_with = event_target:aid_self
+				is_in_faction_with = event_target:aid_self
+				is_subject_of = event_target:aid_self
+			}
+		}
+		ai_diplo_log_country = yes
+	}
+}
+
+# Logga lo stato compatto di UNA nazione (scope = quella nazione).
+# Richiede event_target:aid_self = il player (per le relazioni "con te").
+ai_diplo_log_country = {
+	set_temp_variable = { n_ideo = 0 }
+	if = { limit = { has_government = fascism }    set_temp_variable = { n_ideo = 1 } }
+	if = { limit = { has_government = communism }  set_temp_variable = { n_ideo = 2 } }
+	if = { limit = { has_government = democratic } set_temp_variable = { n_ideo = 3 } }
+	if = { limit = { has_government = neutrality } set_temp_variable = { n_ideo = 4 } }
+
+	set_temp_variable = { n_stab = stability }
+	multiply_temp_variable = { n_stab = 100 }
+	set_temp_variable = { n_ws = war_support }
+	multiply_temp_variable = { n_ws = 100 }
+	set_temp_variable = { n_civ = num_of_civilian_factories }
+	set_temp_variable = { n_mil = num_of_military_factories }
+	set_temp_variable = { n_div = num_divisions }
+	set_temp_variable = { n_states = num_of_controlled_states }
+
+	set_temp_variable = { n_war = 0 }
+	if = { limit = { has_war = yes } set_temp_variable = { n_war = 1 } }
+	set_temp_variable = { n_waryou = 0 }
+	if = { limit = { has_war_with = event_target:aid_self } set_temp_variable = { n_waryou = 1 } }
+	set_temp_variable = { n_cap = 0 }
+	if = { limit = { has_capitulated = yes } set_temp_variable = { n_cap = 1 } }
+	set_temp_variable = { n_fac = 0 }
+	if = { limit = { is_in_faction = yes } set_temp_variable = { n_fac = 1 } }
+	set_temp_variable = { n_facyou = 0 }
+	if = { limit = { is_in_faction_with = event_target:aid_self } set_temp_variable = { n_facyou = 1 } }
+	set_temp_variable = { n_maj = 0 }
+	if = { limit = { is_major = yes } set_temp_variable = { n_maj = 1 } }
+	set_temp_variable = { n_nb = 0 }
+	if = { limit = { is_neighbor_of = event_target:aid_self } set_temp_variable = { n_nb = 1 } }
+	set_temp_variable = { n_subj = 0 }
+	if = { limit = { is_subject = yes } set_temp_variable = { n_subj = 1 } }
+	set_temp_variable = { n_subjyou = 0 }
+	if = { limit = { is_subject_of = event_target:aid_self } set_temp_variable = { n_subjyou = 1 } }
+
+	log = "AIDIPLO_NATION|tag=[This.GetTag]|name=[This.GetName]|ideo=[?n_ideo|0]|stab=[?n_stab|0]|ws=[?n_ws|0]|civ=[?n_civ|0]|mil=[?n_mil|0]|div=[?n_div|0]|states=[?n_states|0]|war=[?n_war|0]|waryou=[?n_waryou|0]|cap=[?n_cap|0]|fac=[?n_fac|0]|facyou=[?n_facyou|0]|maj=[?n_maj|0]|nb=[?n_nb|0]|subj=[?n_subj|0]|subjyou=[?n_subjyou|0]"
+}
+
+# ============================================================
+#  EXPORT DEGLI STATI (regioni): id + nome + proprietario. Serve perche' gli
+#  effetti sugli stati (transfer_state, set_capital, add_state_core/claim,
+#  set_state_controller) richiedono un ID NUMERICO di stato che altrimenti l'IA
+#  non puo' conoscere. Esportiamo gli stati del PLAYER (per la capitale e per
+#  cedere proprie regioni) e quelli dei VICINI (possibili obiettivi). Va chiamato
+#  dallo scope del PLAYER. [This.GetID] = id stato, [This.GetName] = nome stato.
+# ============================================================
+ai_diplo_export_states = {
+	save_event_target_as = aid_self
+	every_owned_state = {
+		log = "AIDIPLO_STATEINFO|id=[This.GetID]|name=[This.GetName]|owner=[event_target:aid_self.GetTag]|mine=1"
+	}
+	every_neighbor_country = {
+		save_event_target_as = aid_nb
+		every_owned_state = {
+			log = "AIDIPLO_STATEINFO|id=[This.GetID]|name=[This.GetName]|owner=[event_target:aid_nb.GetTag]|mine=0"
+		}
+	}
+}
+
+# DIZIONARIO COMPLETO id<->nome di TUTTI gli stati del mondo. Gli ID e i nomi sono STATICI
+# (non cambiano in partita), quindi basta esportarli UNA VOLTA all'avvio: cosi' l'IA puo'
+# riferirsi a QUALSIASI regione (anche dopo un'espansione/conquista) e il middleware la
+# risolve nel suo ID. Solo id+nome (niente proprietario): e' un dizionario, non lo stato.
+ai_diplo_export_all_states = {
+	every_state = {
+		log = "AIDIPLO_STATEINFO|id=[This.GetID]|name=[This.GetName]"
+	}
+}

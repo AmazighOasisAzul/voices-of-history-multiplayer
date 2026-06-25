@@ -1,0 +1,112 @@
+# ============================================================
+#  AI DIPLOMACY - ON ACTIONS
+#  Esporta lo stato di gioco nel game.log una volta al giorno
+#  (solo per i giocatori umani, non per l'IA del gioco).
+#  Il middleware Python legge queste righe e le invia all'LLM.
+# ============================================================
+on_actions = {
+	on_daily = {
+		effect = {
+			every_country = {
+				limit = { is_ai = no }
+				add_to_variable = { aidiplo_day = 1 }   # contatore giorni = "orologio" per i piani
+				ai_diplo_export_state = yes
+				# OGNI giorno aggiorniamo il contesto-mondo RILEVANTE (vicini/nemici/grandi
+				# potenze/fazione/sudditi): cosi' l'IA agisce SEMPRE su dati correnti per cio'
+				# che conta di piu' (le nazioni che cambiano in fretta: guerre, stabilita').
+				ai_diplo_export_world_key = yes
+				# ...e il mondo COMPLETO (tutte le ~150 nazioni) almeno una volta a settimana:
+				# cosi' anche le nazioni lontane / non rilevanti restano aggiornate (al massimo
+				# ~7 giorni di scarto) ed e' GARANTITO che l'IA abbia sempre il contesto di TUTTI
+				# prima di parlarne (giornale, chat, bivi). Niente daily-full -> niente bloat.
+				# HoI4 non ha un on_weekly affidabile, quindi il "settimanale" lo gestiamo noi
+				# con un contatore a 7 giorni.
+				add_to_variable = { aidiplo_wkexp = 1 }
+				if = {
+					limit = { check_variable = { aidiplo_wkexp >= 7 } }
+					set_variable = { aidiplo_wkexp = 0 }
+					ai_diplo_export_world = yes
+				}
+			}
+		}
+	}
+
+	# Quando il giocatore entra in guerra aggiorniamo subito il contesto
+	on_declare_war = {
+		effect = {
+			if = {
+				limit = { is_ai = no }
+				ai_diplo_export_state = yes
+			}
+			# CONTESTO MONDIALE: registra le dichiarazioni di guerra (di chiunque) per l'IA
+			log = "AIDIPLO_WORLD|t=[This.GetName] declared war on [FROM.GetName]"
+		}
+	}
+
+	# CONTESTO MONDIALE: grandi sviluppi in gioco (capitolazioni, cambi di governo) loggati
+	# per il middleware -> diventano "fatti" che l'IA usa per restare coerente col mondo.
+	on_capitulation = {
+		effect = {
+			log = "AIDIPLO_WORLD|t=[This.GetName] has capitulated"
+		}
+	}
+
+	# CONTESTO MONDIALE: annessioni (ROOT = chi annette, FROM = annesso)
+	on_annex = {
+		effect = {
+			log = "AIDIPLO_WORLD|t=[This.GetName] annexed [FROM.GetName]"
+		}
+	}
+
+	on_ruling_party_change = {
+		effect = {
+			if = {
+				limit = { is_major = yes }
+				log = "AIDIPLO_WORLD|t=[This.GetName] underwent a change of ruling party"
+			}
+		}
+	}
+
+	on_startup = {
+		effect = {
+			every_country = {
+				limit = { is_ai = no }
+				# ID univoco della partita (salvato): identifica la campagna per la memoria.
+				# Costruisce un numero casuale a 7 cifre (1.000.000-1.999.999) con random_list:
+				# resta SOTTO il limite delle variabili HoI4 (~2.147.483) evitando l'overflow,
+				# e non dipende dal token "random" (non sempre valido in set_variable).
+				if = {
+					limit = { NOT = { check_variable = { aidiplo_gameid > 0 } } }
+					set_variable = { aidiplo_gameid = 1 }
+					for_loop_effect = {
+						start = 0
+						end = 6
+						value = aidiplo_tmp
+						multiply_variable = { aidiplo_gameid = 10 }
+						random_list = {
+							10 = {}
+							10 = { add_to_variable = { aidiplo_gameid = 1 } }
+							10 = { add_to_variable = { aidiplo_gameid = 2 } }
+							10 = { add_to_variable = { aidiplo_gameid = 3 } }
+							10 = { add_to_variable = { aidiplo_gameid = 4 } }
+							10 = { add_to_variable = { aidiplo_gameid = 5 } }
+							10 = { add_to_variable = { aidiplo_gameid = 6 } }
+							10 = { add_to_variable = { aidiplo_gameid = 7 } }
+							10 = { add_to_variable = { aidiplo_gameid = 8 } }
+							10 = { add_to_variable = { aidiplo_gameid = 9 } }
+						}
+					}
+				}
+				# snapshot iniziale del mondo (cosi' l'IA parte gia' informata)
+				ai_diplo_export_world = yes
+				ai_diplo_export_states = yes
+				# dizionario COMPLETO id<->nome di TUTTI gli stati (statico): una volta sola
+				ai_diplo_export_all_states = yes
+				# ciclo "progresso dei rivali" (bilanciamento): parte dopo 30 giorni
+				country_event = { id = aidiplo.50 days = 30 }
+				# giornale trimestrale: primo numero dopo ~90 giorni
+				# giornale ON-DEMAND dalle decisioni (non piu' automatico)
+			}
+		}
+	}
+}

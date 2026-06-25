@@ -1,0 +1,10 @@
+opinion_modifiers = {
+	ai_diplo_goodwill = {
+		value = 50
+		decay = 1
+	}
+	ai_diplo_distrust = {
+		value = -50
+		decay = 1
+	}
+}

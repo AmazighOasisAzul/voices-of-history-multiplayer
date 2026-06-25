@@ -1,0 +1,353 @@
+﻿add_namespace = aidiplo
+
+# ============================================================
+#  EVENTO DINAMICO GENERICO
+#  Il testo (titolo/descrizione/opzioni) e' preso da chiavi di
+#  localizzazione che il middleware RISCRIVE a runtime, poi lancia
+#  "reload localisation" e infine "event aidiplo.1" dalla console.
+#  Cosi' l'IA puo' generare eventi narrativi al volo.
+# ============================================================
+country_event = {
+	id = aidiplo.1
+	title = aidiplo.1.t
+	desc = aidiplo.1.d
+	picture = GFX_report_event_german_reichstag_gathering
+	is_triggered_only = yes
+
+	option = {
+		name = aidiplo.1.a
+		# Gli effetti meccanici sono gia' stati applicati dal middleware
+		# via console. Qui restano solo conferme narrative.
+		ai_chance = { factor = 1 }
+	}
+	option = {
+		name = aidiplo.1.b
+		ai_chance = { factor = 0 }
+	}
+}
+
+# ============================================================
+#  EVENTO "AZIONE" stile focus-tree (fa scoppiare la guerra, ecc.)
+#  Gli effetti dentro le opzioni sono COMPILATI AL CARICAMENTO della mod,
+#  quindi declare_war_on NON da' "errors compiling" (a differenza di
+#  eval_effect a runtime). Il middleware, prima di lanciarlo, salva la
+#  nazione bersaglio come event_target globale 'aidiplo_tgt' e imposta la
+#  variabile 'aidiplo_act' (1=guerra, 2=annessione, 3=fantoccio).
+#  Viene lanciato alla nazione che COMPIE l'azione (ROOT = chi agisce).
+# ============================================================
+country_event = {
+	id = aidiplo.2
+	title = aidiplo.2.t
+	desc = aidiplo.2.d
+	picture = GFX_report_event_generic_army
+	is_triggered_only = yes
+
+	option = {
+		name = aidiplo.2.a   # conferma -> esegue l'azione (ROOT = chi agisce)
+		if = {
+			limit = { check_variable = { aidiplo_act = 1 } }   # dichiara guerra
+			declare_war_on = { target = event_target:aidiplo_tgt type = annex_everything }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_act = 2 } }   # annetti
+			annex_country = { target = event_target:aidiplo_tgt transfer_troops = yes }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_act = 3 } }   # rendi fantoccio
+			puppet = event_target:aidiplo_tgt
+		}
+		if = {
+			limit = { check_variable = { aidiplo_act = 4 } }   # patto di non aggressione
+			diplomatic_relation = { country = event_target:aidiplo_tgt relation = non_aggression_pact active = yes }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_act = 5 } }   # alleanza / fazione
+			if = { limit = { is_in_faction = no } create_faction = AIDIPLO_NEW_FACTION }
+			add_to_faction = event_target:aidiplo_tgt
+		}
+		if = {
+			limit = { check_variable = { aidiplo_act = 6 } }   # garanzia
+			diplomatic_relation = { country = event_target:aidiplo_tgt relation = guarantee active = yes }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_act = 7 } }   # accesso militare
+			diplomatic_relation = { country = event_target:aidiplo_tgt relation = military_access active = yes }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_act = 8 } }   # fine vassallaggio (ROOT = overlord)
+			end_puppet = event_target:aidiplo_tgt
+		}
+		if = {
+			limit = { check_variable = { aidiplo_act = 9 } }   # embargo commerciale + calo opinione
+			send_embargo = event_target:aidiplo_tgt
+			event_target:aidiplo_tgt = { add_opinion_modifier = { target = ROOT modifier = ai_diplo_distrust } }
+		}
+	}
+	option = {
+		name = aidiplo.2.b   # ripensaci
+	}
+}
+
+# ============================================================
+#  EVENTO DI RIFIUTO (anacronismo / fallimento tecnologico)
+#  Lanciato dal middleware quando il giocatore chiede l'impossibile.
+#  Testo dinamico via chiave aidiplo.10.d (riscritta a runtime).
+# ============================================================
+country_event = {
+	id = aidiplo.10
+	title = aidiplo.10.t
+	desc = aidiplo.10.d
+	picture = GFX_report_event_generic_factory
+	is_triggered_only = yes
+
+	option = {
+		name = aidiplo.10.a
+	}
+}
+
+# ============================================================
+#  COMPLETAMENTO PIANI A TEMPO (6 "slot" concorrenti)
+#  Il middleware programma questi eventi con i GIORNI reali di HoI4:
+#    eval_effect <TAG> = { country_event = { id = aidiplo.30 days = D } }
+#  Quando scadono (dopo D giorni di gioco) loggano il completamento; il
+#  middleware applica gli effetti del piano e mostra la narrazione finale.
+# ============================================================
+country_event = { id = aidiplo.30 hidden = yes is_triggered_only = yes immediate = { log = "AIDIPLO_PLAN_DONE|slot=0" } }
+country_event = { id = aidiplo.31 hidden = yes is_triggered_only = yes immediate = { log = "AIDIPLO_PLAN_DONE|slot=1" } }
+country_event = { id = aidiplo.32 hidden = yes is_triggered_only = yes immediate = { log = "AIDIPLO_PLAN_DONE|slot=2" } }
+country_event = { id = aidiplo.33 hidden = yes is_triggered_only = yes immediate = { log = "AIDIPLO_PLAN_DONE|slot=3" } }
+country_event = { id = aidiplo.34 hidden = yes is_triggered_only = yes immediate = { log = "AIDIPLO_PLAN_DONE|slot=4" } }
+country_event = { id = aidiplo.35 hidden = yes is_triggered_only = yes immediate = { log = "AIDIPLO_PLAN_DONE|slot=5" } }
+
+# ============================================================
+#  EVENTO DECISIONE INTERMEDIA (diramazioni dei piani importanti)
+#  Testo e opzioni riscritti dal middleware. Ogni opzione LOGGA la scelta,
+#  il middleware applica la conseguenza relativa.
+# ============================================================
+country_event = {
+	id = aidiplo.46
+	title = aidiplo.46.t
+	desc = aidiplo.46.d
+	picture = GFX_report_event_generic_factory
+	is_triggered_only = yes
+
+	option = { name = aidiplo.46.a log = "AIDIPLO_CHOICE|c=1" }
+	option = { name = aidiplo.46.b log = "AIDIPLO_CHOICE|c=2" }
+	# 3a opzione: il giocatore prende in mano la situazione e SCRIVE cosa fa
+	# (si apre il canale evento del middleware per questo bivio).
+	option = { name = aidiplo.46.c log = "AIDIPLO_CHOICE|c=3" }
+}
+
+# ============================================================
+#  PROGRESSO DEI RIVALI (bilanciamento anti-cheat)
+#  Evento nascosto e ricorrente: ogni 90 giorni le grandi potenze IA
+#  ricevono un progresso MODESTO e calibrato (industria + potere politico,
+#  con sfumatura ideologica), cosi' il mondo resta competitivo anche se il
+#  giocatore spinge molte riforme. Si ri-lancia da solo.
+# ============================================================
+country_event = {
+	id = aidiplo.50
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		every_country = {
+			limit = {
+				is_major = yes
+				is_ai = yes
+				is_subject = no
+			}
+			add_timed_idea = { idea = ai_diplo_rival_progress days = 100 }
+			add_political_power = 40
+			if = { limit = { has_government = fascism }    add_war_support = 0.01 }
+			if = { limit = { has_government = communism }  add_stability = 0.01 }
+			if = { limit = { has_government = democratic } add_political_power = 20 }
+		}
+		country_event = { id = aidiplo.50 days = 90 }
+	}
+}
+
+# ============================================================
+#  GIORNALE TRIMESTRALE (timer): ogni ~90 giorni logga AIDIPLO_NEWS,
+#  il middleware genera l'editoriale giornalistico e lo mostra.
+# ============================================================
+country_event = {
+	id = aidiplo.51
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		# PRIMA di lanciare il giornale ri-esportiamo il mondo COMPLETO (tutte le ~150
+		# nazioni), non solo quelle rilevanti del contesto giornaliero: l'editoriale passa
+		# in rassegna il mondo intero, quindi l'IA deve avere lo stato AGGIORNATO di TUTTI.
+		# Il middleware legge prima queste righe (AIDIPLO_NATION) e poi AIDIPLO_NEWS, quindi
+		# quando genera l'editoriale il contesto e' gia' completo e fresco (no invenzioni).
+		ai_diplo_export_world = yes
+		log = "AIDIPLO_NEWS|tag=[This.GetTag]"
+		country_event = { id = aidiplo.51 days = 90 }
+	}
+}
+
+# ============================================================
+#  NUOVO CAPO DI STATO NOMINATO (colpo di stato / cambio leader)
+#  create_country_leader e set_politics sono scope-sensitive: via eval_effect da
+#  console NON compilano. Qui invece sono COMPILATI AL CARICAMENTO, quindi funzionano.
+#  Il middleware: scrive il nome scelto nella chiave loc AIDIPLO_LEADER, ricarica la
+#  localizzazione, imposta la variabile aidiplo_newideo (1=fascismo, 2=comunismo,
+#  3=democratico, 4=neutrale) e lancia questo evento alla nazione interessata.
+# ============================================================
+country_event = {
+	id = aidiplo.60
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		# FASE 1: set_politics porta al governo il partito scelto. Il NOSTRO capo (col nome scelto)
+		# lo crea l'evento aidiplo.63 DOPO che il middleware ha tolto col comando RAW
+		# retire_country_leader il leader del gioco. create_country_leader prende il nome a runtime
+		# dalla chiave loc gia' ricaricata -> nome scelto (funziona a parita' d'ideologia).
+		if = {
+			limit = { check_variable = { aidiplo_newideo = 1 } }
+			set_politics = { ruling_party = fascism elections_allowed = no }
+			add_popularity = { ideology = fascism popularity = 0.4 }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_newideo = 2 } }
+			set_politics = { ruling_party = communism elections_allowed = no }
+			add_popularity = { ideology = communism popularity = 0.4 }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_newideo = 3 } }
+			set_politics = { ruling_party = democratic elections_allowed = yes }
+			add_popularity = { ideology = democratic popularity = 0.4 }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_newideo = 4 } }
+			set_politics = { ruling_party = neutrality elections_allowed = no }
+			add_popularity = { ideology = neutrality popularity = 0.4 }
+		}
+		# NB: l'offerta di reset dei focus (evento aidiplo.62) la lancia il MIDDLEWARE dopo.
+	}
+}
+
+# ============================================================
+#  FASE 2 del cambio capo (aidiplo.63): crea il NOSTRO capo col nome scelto. Lanciato DOPO
+#  aidiplo.60 (set_politics) e DOPO i comandi RAW retire_country_leader (che tolgono il leader del
+#  gioco). create_country_leader viene creato ORA, quindi risolve "AIDIPLO_LEADER" col valore
+#  corrente della loc (gia' ricaricata) = il nome scelto. picture = ritratto in ombra.
+# ============================================================
+country_event = {
+	id = aidiplo.63
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		if = {
+			limit = { check_variable = { aidiplo_newideo = 1 } }
+			create_country_leader = { name = "AIDIPLO_LEADER" picture = "GFX_aidiplo_shadow_leader" ideology = fascism }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_newideo = 2 } }
+			create_country_leader = { name = "AIDIPLO_LEADER" picture = "GFX_aidiplo_shadow_leader" ideology = marxism }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_newideo = 3 } }
+			create_country_leader = { name = "AIDIPLO_LEADER" picture = "GFX_aidiplo_shadow_leader" ideology = liberalism }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_newideo = 4 } }
+			create_country_leader = { name = "AIDIPLO_LEADER" picture = "GFX_aidiplo_shadow_leader" ideology = despotism }
+		}
+	}
+}
+
+# ============================================================
+#  FALLBACK MANUALE (decisione aid_fix_leader): impone il capo col nome scelto dal player per
+#  l'ideologia ATTUALE. Il middleware scrive il nome nella chiave loc, ricarica, toglie il leader
+#  del gioco coi comandi RAW retire_country_leader, poi lancia questo evento che crea il NOSTRO
+#  (create_country_leader, nome risolto a runtime = scelto). picture = ritratto in ombra.
+# ============================================================
+country_event = {
+	id = aidiplo.64
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		# SOLO recruit_character del NOSTRO personaggio predefinito (col tuo ritratto) dell'ideologia
+		# ATTUALE: lo rende disponibile sulla nazione. Il PROMOTE avviene nell'evento SEPARATO
+		# aidiplo.65 (lanciato SUBITO DOPO nello stesso run): cosi' il personaggio e' GIA' reclutato
+		# quando viene promosso (evita il problema di recruit+promote nello stesso evento, motivo
+		# per cui prima il capo non veniva insediato).
+		if = { limit = { has_government = fascism }    recruit_character = aidiplo_hos_fascism }
+		if = { limit = { has_government = communism }  recruit_character = aidiplo_hos_communism }
+		if = { limit = { has_government = democratic } recruit_character = aidiplo_hos_democratic }
+		if = { limit = { has_government = neutrality } recruit_character = aidiplo_hos_neutrality }
+	}
+}
+
+# ============================================================
+#  PROMOZIONE (passo 2 del fallback): promuove il personaggio GIA' RECLUTATO da aidiplo.64 a capo
+#  di Stato (priorita' assoluta, niente "scorrimento"). Lanciato dal middleware subito DOPO
+#  aidiplo.64, nello stesso run. Il nome (chiave loc AIDIPLO_LEADER) si applica al riavvio.
+# ============================================================
+country_event = {
+	id = aidiplo.65
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		if = { limit = { has_government = fascism }    promote_character = aidiplo_hos_fascism }
+		if = { limit = { has_government = communism }  promote_character = aidiplo_hos_communism }
+		if = { limit = { has_government = democratic } promote_character = aidiplo_hos_democratic }
+		if = { limit = { has_government = neutrality } promote_character = aidiplo_hos_neutrality }
+	}
+}
+
+# ============================================================
+#  CAMBIO RADICALE DI REGIME -> RIFONDARE LO STATO? (scelta del player)
+#  Lanciato dal MIDDLEWARE (event aidiplo.62 ROOT) quando l'ideologia/ordinamento cambia. Viste le
+#  conseguenze NON resettiamo i focus in automatico: chiediamo. Si' = nuovo albero
+#  dei focus generico (i vecchi, ormai senza senso, spariscono); No = teniamo l'attuale.
+#  Territorio, cores e unita' restano in ogni caso.
+# ============================================================
+country_event = {
+	id = aidiplo.62
+	title = aidiplo.62.t
+	desc = aidiplo.62.d
+	picture = GFX_report_event_german_reichstag_gathering
+	is_triggered_only = yes
+
+	option = {
+		name = aidiplo.62.a
+		load_focus_tree = { tree = generic_focus keep_completed = no }
+	}
+	option = {
+		name = aidiplo.62.b
+	}
+}
+
+# ============================================================
+#  GUERRA CIVILE (atomica, via EVENTO invece del comando console 'civilwar').
+#  Eseguire da evento e' ATOMICO: una sola fazione ribelle, niente doppioni da
+#  trigger concorrenti. Il middleware imposta aidiplo_cw_ideo (1=fasc 2=com
+#  3=dem 4=neutrale = ideologia dei RIBELLI) e lancia questo evento.
+#  start_civil_war usa il GRUPPO ideologico (fascism/communism/democratic/neutrality).
+# ============================================================
+country_event = {
+	id = aidiplo.61
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		if = {
+			limit = { check_variable = { aidiplo_cw_ideo = 1 } }
+			start_civil_war = { ideology = fascism size = 0.45 }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_cw_ideo = 2 } }
+			start_civil_war = { ideology = communism size = 0.45 }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_cw_ideo = 3 } }
+			start_civil_war = { ideology = democratic size = 0.45 }
+		}
+		if = {
+			limit = { check_variable = { aidiplo_cw_ideo = 4 } }
+			start_civil_war = { ideology = neutrality size = 0.45 }
+		}
+	}
+}

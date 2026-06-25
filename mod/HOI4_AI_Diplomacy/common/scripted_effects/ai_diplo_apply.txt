@@ -1,0 +1,74 @@
+# ============================================================
+#  AI DIPLOMACY - EFFETTI APPLICATIVI (LIBRERIA "AZIONI")
+#  Questi effetti vengono richiamati dal middleware tramite la
+#  console con:  effect TAG = { ai_diplo_xxxxx = yes }
+#  Tenere la logica qui (e non nel comando iniettato) rende la
+#  stringa da digitare cortissima e quindi molto piu' affidabile.
+# ============================================================
+
+# ---- CAMBI DI REGIME (cambia partito, ideologia E ritratto del leader) ----
+ai_diplo_regime_change_fascism = {
+	set_politics = { ruling_party = fascism elections_allowed = no }
+	add_popularity = { ideology = fascism popularity = 0.30 }
+	set_party_name = { ideology = fascism long_name = AIDIPLO_FASC_PARTY name = AIDIPLO_FASC_PARTY }
+}
+ai_diplo_regime_change_communism = {
+	set_politics = { ruling_party = communism elections_allowed = no }
+	add_popularity = { ideology = communism popularity = 0.30 }
+}
+ai_diplo_regime_change_democratic = {
+	set_politics = { ruling_party = democratic elections_allowed = yes }
+	add_popularity = { ideology = democratic popularity = 0.30 }
+}
+ai_diplo_regime_change_neutrality = {
+	set_politics = { ruling_party = neutrality elections_allowed = yes }
+	add_popularity = { ideology = neutrality popularity = 0.30 }
+}
+
+# ---- GUERRA CIVILE (scatena rivolta della ideologia indicata via temp var aid_civilwar_size 0..1) ----
+ai_diplo_civil_war_fascism   = { start_civil_war = { ideology = fascism   size = 0.45 } }
+ai_diplo_civil_war_communism = { start_civil_war = { ideology = communism size = 0.45 } }
+ai_diplo_civil_war_democratic= { start_civil_war = { ideology = democratic size = 0.45 } }
+
+# ---- ECONOMIA DI GUERRA / MOBILITAZIONE TOTALE ----
+ai_diplo_total_mobilization = {
+	add_ideas = all_adults_serve   # legge di coscrizione massima
+	add_ideas = war_economy        # legge economica
+}
+ai_diplo_partial_mobilization = {
+	add_ideas = limited_conscription
+	add_ideas = partial_economic_mobilisation
+}
+
+# ---- CONVERSIONE INDUSTRIALE / SPINTA ALLA PRODUZIONE MILITARE ----
+# Le fabbriche vanno IN COSTRUZIONE (no instant): la "spinta" e' un modificatore
+# temporaneo che accelera la produzione, come un ramo industriale dei focus.
+ai_diplo_war_production_boost = {
+	capital_scope = {
+		add_building_construction = { type = arms_factory level = 2 }
+	}
+	add_timed_idea = { idea = ai_diplo_war_drive days = 180 }
+}
+
+# ---- FORTIFICAZIONE DEI CONFINI (linea difensiva) ----
+# Costruire bunker provincia-per-provincia da console e' fragile tra le versioni,
+# quindi rappresentiamo la "linea difensiva" con un'idea difensiva forte.
+ai_diplo_fortify_borders = {
+	add_timed_idea = { idea = ai_diplo_fortified days = 365 }
+}
+
+# ---- LEVE NUMERICHE GENERICHE (il middleware setta i temp var prima) ----
+# uso:  effect TAG = { set_temp_variable = { aid_n = 100 } ai_diplo_add_pp = yes }
+ai_diplo_add_pp        = { add_political_power = var:aid_n }
+ai_diplo_add_stability = { add_stability = var:aid_n }      # aid_n in frazione (es 0.10)
+ai_diplo_add_warsup    = { add_war_support = var:aid_n }    # aid_n in frazione
+ai_diplo_add_manpower  = { add_manpower = var:aid_n }
+
+# ---- PATTI DIPLOMATICI ----
+# uso:  effect TAG = { ai_diplo_target = SOV ... }  -> qui usiamo var:aid_target_tag se serve
+ai_diplo_form_faction = {
+	if = {
+		limit = { is_in_faction = no }
+		create_faction = AIDIPLO_NEW_FACTION
+	}
+}

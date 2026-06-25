@@ -1,0 +1,26 @@
+guiTypes = {
+
+	# --------------------------------------------------------
+	#  BOTTONE "PARLA CON IL LEADER (IA)" nella schermata
+	#  DIPLOMATICA della nazione selezionata (tasto destro -> Diplomazia).
+	#  Funziona con QUALSIASI nazione del mondo.
+	#  Se la posizione si sovrappone ad altri elementi, cambia x/y qui.
+	# --------------------------------------------------------
+	containerWindowType = {
+		name = "ai_diplo_diplo_button_window"
+		position = { x = 25 y = 6 }
+		size = { width = 270 height = 36 }
+		clipping = no
+		Orientation = upper_left
+
+		buttonType = {
+			name = "ai_diplo_talk_button"
+			position = { x = 0 y = 0 }
+			quadTextureSprite = "GFX_button_261x34"
+			buttonText = "ai_diplo_talk_button"
+			buttonFont = "hoi_16mbs"
+			clicksound = click_close
+			Orientation = upper_left
+		}
+	}
+}

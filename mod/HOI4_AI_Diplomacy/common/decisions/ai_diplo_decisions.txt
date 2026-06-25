@@ -1,0 +1,102 @@
+# ============================================================
+#  AI DIPLOMACY - DECISIONI (solo AZIONI INTERNE)
+#  Per parlare con le ALTRE nazioni NON si usa piu' una decisione:
+#  ora c'e' il bottone "Parla con il Leader (IA)" nella schermata
+#  diplomatica (tasto destro su una nazione) -> vedi
+#  common/scripted_guis/ai_diplo_gui.txt
+# ============================================================
+ai_diplo_category = {
+
+	# --- Ufficio del Capo di Stato / Comando Supremo (decreti free-text) ---
+	aid_open_decree = {
+		icon = generic_political_discontent
+		visible = { is_ai = no }
+		cost = 0
+		fire_only_once = no
+		complete_effect = {
+			ai_diplo_export_state = yes
+			ai_diplo_export_tags = yes
+			ai_diplo_export_world = yes
+			ai_diplo_export_states = yes
+			log = "AIDIPLO_DECREE_OPEN|tag=[This.GetTag]"
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	# --- Vita del Capo di Stato (roleplay: discorsi, riunioni, gira per la nazione) ---
+	aid_leader_life = {
+		icon = generic_prepare_civil_war
+		visible = { is_ai = no }
+		cost = 0
+		fire_only_once = no
+		complete_effect = {
+			ai_diplo_export_state = yes
+			ai_diplo_export_tags = yes
+			ai_diplo_export_world = yes
+			ai_diplo_export_states = yes
+			log = "AIDIPLO_LIFE_OPEN|tag=[This.GetTag]|leader=[This.GetLeader]"
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	# --- Agisci PER CONTO DI UN ALTRO ATTORE interno (NON il capo di Stato):
+	#     una fazione, un generale, un cospiratore, un movimento... per es. per
+	#     tramare un golpe contro il governo in carica. ---
+	aid_actor = {
+		icon = generic_intel
+		visible = { is_ai = no }
+		cost = 0
+		fire_only_once = no
+		complete_effect = {
+			ai_diplo_export_state = yes
+			ai_diplo_export_tags = yes
+			ai_diplo_export_world = yes
+			ai_diplo_export_states = yes
+			log = "AIDIPLO_ACTOR_OPEN|tag=[This.GetTag]"
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	# --- LEGGI LA STAMPA (giornale ON-DEMAND): il giornale NON esce piu' da solo; lo leggi
+	#     quando vuoi, scegliendo la testata. Ognuna ri-esporta il mondo COMPLETO (contesto
+	#     fresco) e logga il TIPO di giornale che il middleware deve scrivere. ---
+	aid_news_state = {
+		icon = generic_propaganda
+		visible = { is_ai = no }
+		cost = 0
+		fire_only_once = no
+		complete_effect = {
+			ai_diplo_export_world = yes
+			log = "AIDIPLO_NEWS|type=state|tag=[This.GetTag]"
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	aid_news_neutral = {
+		icon = generic_intel
+		visible = { is_ai = no }
+		cost = 0
+		fire_only_once = no
+		complete_effect = {
+			ai_diplo_export_world = yes
+			log = "AIDIPLO_NEWS|type=neutral|tag=[This.GetTag]"
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	aid_news_opposition = {
+		icon = generic_political_discontent
+		visible = { is_ai = no }
+		cost = 0
+		fire_only_once = no
+		complete_effect = {
+			ai_diplo_export_world = yes
+			log = "AIDIPLO_NEWS|type=opposition|tag=[This.GetTag]"
+		}
+		ai_will_do = { factor = 0 }
+	}
+
+	# NB: la decisione "Impose Head of State" (capo di Stato col nome scelto) e' stata RIMOSSA
+	#     temporaneamente: verra' rifatta piu' avanti. I personaggi/eventi dedicati restano nei
+	#     file ma dormienti (nessuno li attiva).
+}

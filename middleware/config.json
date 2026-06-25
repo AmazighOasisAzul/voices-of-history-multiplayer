@@ -1,0 +1,37 @@
+{
+  "_README": "Modifica SOLO i valori se serve. ${USERPROFILE} viene espanso in C:/Users/IlTuoNome. Se i Documenti sono su OneDrive, correggi i percorsi qui sotto.",
+
+  "player2": {
+    "base_url": "http://localhost:4315",
+    "chat_path": "/v1/chat/completions",
+    "health_path": "/v1/health",
+    "game_key": "hoi4-ai-diplomacy",
+    "model": "",
+    "timeout_sec": 120,
+    "temperature": 0.8
+  },
+
+  "paths": {
+    "game_log": "${USERPROFILE}/Documents/Paradox Interactive/Hearts of Iron IV/logs/game.log",
+    "mod_localisation": "${USERPROFILE}/Documents/Paradox Interactive/Hearts of Iron IV/mod/HOI4_AI_Diplomacy/localisation/english/ai_diplo_l_english.yml",
+    "memory_db": "ai_diplo_memory.sqlite3"
+  },
+
+  "injection": {
+    "console_key": "grave",
+    "input_method": "paste",
+    "window_title": "Hearts of Iron IV",
+    "key_delay": 0.02,
+    "pre_command_delay": 0.30,
+    "post_command_delay": 0.15,
+    "focus_game": true,
+    "reload_loc_after_event": true,
+    "dry_run": false
+  },
+
+  "behavior": {
+    "language": "it",
+    "max_history": 40,
+    "auto_execute_actions": true
+  }
+}

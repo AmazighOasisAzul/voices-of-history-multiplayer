@@ -1,0 +1,21 @@
+# ============================================================
+#  SCRIPTED GUI - UI sovrapposta col nome del CAPO DI STATO
+#  Si aggancia alla schermata POLITICA del giocatore e mostra la finestra
+#  "ai_diplo_hos_window" (vedi interface/ai_diplo_hos.gui) quando e' attivo il
+#  flag di paese 'aidiplo_hos' (alzato dal middleware dopo un colpo di stato).
+#  Il testo mostrato e' la chiave loc AIDIPLO_LEADER, riscritta a runtime.
+# ============================================================
+scripted_gui = {
+
+	ai_diplo_hos = {
+		context_type = player_context
+		parent_window_token = politics_tab
+		window_name = "ai_diplo_hos_window"
+
+		# DISATTIVATO: il nome del capo di Stato ora cambia DAVVERO in gioco (create_country_leader),
+		# quindi NON serve piu' l'overlay col nome "attaccato". Mai visibile.
+		visible = {
+			always = no
+		}
+	}
+}

@@ -1,0 +1,63 @@
+﻿l_english:
+ ai_diplo_category:0 "§YVoices of History§! — AI Mod"
+
+ aid_open_decree:0 "§YHead of State Office / Supreme Command§!"
+ aid_open_decree_desc:0 "Open the §Yfree-text decrees§!: write your orders in natural language (reforms, conscription laws, industrial plans, political moves) and the AI will translate them into real in-game actions."
+
+ aid_leader_life:0 "§GLife of the Head of State§!"
+ aid_leader_life_desc:0 "Step into your leader's shoes: tour the nation, hold cabinet meetings, deliver speeches to the people, manage daily political life. Your actions can have real effects (stability, support, political power, events)."
+
+ ai_diplo_talk_button:0 "§YTalk to the Leader (AI)§!"
+ ai_diplo_talk_button_desc:0 "Start a direct dialogue with this nation's leader. The AI plays them according to ideology, doctrine and faction. Works with ANY nation in the world."
+
+ aidiplo.1.t:0 "Diplomatic Development"
+ aidiplo.1.d:0 "Events take an unexpected turn..."
+ aidiplo.1.a:0 "So be it."
+ aidiplo.1.b:0 "Noted."
+ aidiplo.2.t:0 "Supreme Command Decision"
+ aidiplo.2.d:0 "The diplomatic games are over: it is time to act. Do we confirm the order?"
+ aidiplo.2.a:0 "Yes, proceed. (execute)"
+ aidiplo.2.b:0 "No, let us reconsider."
+ aidiplo.46.t:0 "Plan Crossroads"
+ aidiplo.46.d:0 "The plan requires a decision."
+ aidiplo.46.a:0 "Option A"
+ aidiplo.46.b:0 "Option B"
+
+ aidiplo.10.t:0 "The Ministry Rejects the Proposal"
+ aidiplo.10.d:0 "Our experts report that what was requested is beyond our current capabilities."
+ aidiplo.10.a:0 "Damn. Very well."
+
+ ai_diplo_war_drive:0 "War Drive"
+ ai_diplo_war_drive_desc:0 "An extraordinary industrial mobilization ordered by the Supreme Command."
+ ai_diplo_reform_strain:0 "Reform Strain"
+ ai_diplo_reform_strain_desc:0 "The price of reforms pushed too fast: political power, stability and shipyards suffer for a period."
+ ai_diplo_fortified:0 "Fortified Defensive Line"
+ ai_diplo_fortified_desc:0 "Fortifications and trenches along the borders ordered by the Supreme Command."
+
+ AIDIPLO_FASC_PARTY:0 "National Movement"
+ AIDIPLO_NEW_FACTION:0 "Diplomatic Pact"
+
+ # Dynamic nation name (cosmetic tag): rewritten at runtime by the middleware
+ AIDIPLO_DYN:0 "New State"
+ AIDIPLO_DYN_DEF:0 "New State"
+ AIDIPLO_DYN_ADJ:0 "of the New State"
+
+ # Head of state name shown in the overlay (event aidiplo.60): rewritten at runtime
+ AIDIPLO_LEADER:0 "New Leader"
+
+ # Act as another internal actor (faction/general/conspirator), not the head of state
+ aid_actor:0 "§GAct as Another Figure§!"
+ aid_actor_desc:0 "Act as someone OTHER than the head of state inside your nation - a faction leader, a general, a conspirator, a movement. Use it to roleplay plots within the State (e.g. orchestrating a coup against the current government). The AI treats your actions as that actor's, NOT as the State acting officially."
+ aidiplo.46.c:0 "Take personal command (write your own move)"
+ aid_news_state:0 "§YRead the State Press§!"
+ aid_news_state_desc:0 "Read today's editorial from the §Ystate / pro-government newspaper§! (loyal to the regime). The press no longer appears on its own — you read it when you want."
+ aid_news_neutral:0 "§YRead the Independent Press§!"
+ aid_news_neutral_desc:0 "Read a §Ybalanced, independent§! editorial — sober and factual, neither cheering for nor attacking the government."
+ aid_news_opposition:0 "§YRead the Opposition Press§!"
+ aid_news_opposition_desc:0 "Read the §Yopposition / dissident press§! — critical of the government (underground in a dictatorship, the opposition paper in a democracy)."
+ aid_fix_leader:0 "§YImpose Head of State (custom name)§!"
+ aid_fix_leader_desc:0 "Use this ONLY if a leader change did not give your head of state the name you chose. The middleware will ask you for the new leader's full name and install a head of state with that name (generic shadowed portrait) with absolute priority, for any nation and ideology."
+ aidiplo.62.t:0 "A New State Is Born"
+ aidiplo.62.d:0 "The old order has fallen: a new regime, with a different ideology, now rules. The previous nation's path and its national focuses no longer fit what we have become. Do you want to §YREFOUND the state§! — discard the old focus tree and begin anew from a generic one? Territory, cores and armed forces are kept either way."
+ aidiplo.62.a:0 "Refound the state — start a new (generic) focus tree"
+ aidiplo.62.b:0 "Keep our current focus tree"

@@ -1,0 +1,8 @@
+spriteTypes = {
+	# Ritratto generico per il capo di Stato imposto dal player (giacca + volto in ombra):
+	# "si lascia all'immaginazione". Usato dai personaggi in common/characters/ai_diplo_leaders.txt.
+	spriteType = {
+		name = "GFX_aidiplo_shadow_leader"
+		texturefile = "gfx/aidiplo_leaders/shadow_leader.tga"
+	}
+}

@@ -1,0 +1,32 @@
+# ============================================================
+#  Capi di Stato del FALLBACK (decisione aid_fix_leader), uno per gruppo ideologico.
+#  Personaggi GENERICI col RITRATTO del player. Vengono RECLUTATI sul player all'avvio della
+#  partita (common/on_actions) cosi' sono gia' disponibili, e PROMOSSI dalla decisione
+#  (aidiplo.65: promote_character = priorita' assoluta, scavalca anche i leader forti come
+#  Mussolini, su QUALSIASI ideologia).
+#  name = AIDIPLO_LEADER (chiave di loc, senza virgolette): HoI4 risolve il nome AL CARICAMENTO,
+#  quindi dopo il riavvio gestito dal middleware il capo assume il NOME SCELTO.
+#  Formato allineato a vanilla: ritratto tra virgolette, niente campo "id", niente traits vuoto.
+# ============================================================
+characters = {
+	aidiplo_hos_fascism = {
+		name = AIDIPLO_LEADER
+		portraits = { civilian = { large = "GFX_aidiplo_shadow_leader" } }
+		country_leader = { ideology = fascism    expire = "1965.1.1" }
+	}
+	aidiplo_hos_communism = {
+		name = AIDIPLO_LEADER
+		portraits = { civilian = { large = "GFX_aidiplo_shadow_leader" } }
+		country_leader = { ideology = marxism    expire = "1965.1.1" }
+	}
+	aidiplo_hos_democratic = {
+		name = AIDIPLO_LEADER
+		portraits = { civilian = { large = "GFX_aidiplo_shadow_leader" } }
+		country_leader = { ideology = liberalism expire = "1965.1.1" }
+	}
+	aidiplo_hos_neutrality = {
+		name = AIDIPLO_LEADER
+		portraits = { civilian = { large = "GFX_aidiplo_shadow_leader" } }
+		country_leader = { ideology = despotism  expire = "1965.1.1" }
+	}
+}

@@ -1,0 +1,56 @@
+[h1]HOI4 AI Mod — Voices of History[/h1]
+[i]Stop following the focus tree. Start writing your own history.[/i]
+
+[hr][/hr]
+
+In vanilla Hearts of Iron IV your path is decided in advance: a fixed focus tree, scripted events, the same choices every game. [b]Voices of History[/b] tears that ceiling off. Every nation's leader is played by a [b]local AI[/b] you can actually talk to — and anything you can describe, you can attempt. Negotiate, scheme, reform, industrialise, stage a coup, redraw the map. You say it in plain language; the AI turns it into [b]real actions and events inside the game[/b].
+
+It is not a chatbot bolted on top of HoI4. It is a new way to play: [b]your[/b] alternate history, unfolding move by move, with a world that understands what is happening and reacts.
+
+[hr][/hr]
+
+[h2]Write the history you want[/h2]
+[list]
+[*][b]No focus-tree cage.[/b] Want to industrialise the south, purge the old guard, sign a secret pact, or seize power from the shadows? Just say so. The AI builds it as concrete game actions — no waiting for the "right" focus.
+[*][b]Talk to any leader, anywhere.[/b] Right-click a nation and open a real conversation with its leader, played in character by the AI according to its ideology, doctrine and goals. Strike alliances, lend-lease, territorial deals, coordinated declarations of war — what you agree on actually happens.
+[*][b]Be more than the head of state.[/b] Step into your leader's daily life (speeches, tours, cabinet meetings), or act as someone else entirely — a general, a faction, a conspirator — and plot against the sitting government.
+[*][b]A world that reacts.[/b] The AI reads the live game state every turn — wars, fronts, stability, factions, who rules whom — so it never invents nonsense and always answers in context. It even writes you newspapers (state, independent or opposition) about what is really going on.
+[/list]
+
+[h2]Tuned to feel like real HoI4[/h2]
+This is the part most "AI" mods get wrong. Voices of History is [b]carefully calibrated to base Hearts of Iron IV[/b] so it never feels cheaty or random:
+[list]
+[*][b]Real, proportionate effects.[/b] Everything maps to genuine HoI4 systems — factories, infrastructure, resources, equipment, manpower, stability, war support, political power, laws, national spirits — in amounts sized to the base game, not magic numbers.
+[*][b]Costs and consequences.[/b] Big moves take time and pay a price. Major undertakings unfold as [b]timed plans[/b] with in-game crossroads (real pop-up decisions) that branch on your choices, and can succeed, partly succeed, or fail.
+[*][b]Political capital matters.[/b] Propaganda and power-grabs build political power; reforms that fight resistance spend it — and can be refused if you can't afford them, just like the base game's economy of decisions.
+[*][b]You set the tone.[/b] Pick a realism mode at startup — [b]Realistic[/b] (strict historical plausibility), [b]Plausible[/b] (grounded alternate history), or [b]Sandbox[/b] (anything goes) — so the experience is as serious or as wild as you want.
+[/list]
+
+[h2]Full of features[/h2]
+[list]
+[*]Diplomacy with every nation's leader (pacts, alliances, guarantees, military access, embargoes, war, white peace…)
+[*]Supreme Command: free-text orders turned into real reforms, mobilisation, industry, laws
+[*]Coups, civil wars, regime and leader changes, nation renaming, decolonisation
+[*]Territory, cores, claims, puppets and annexations
+[*]Timed multi-stage plans with branching crossroads
+[*]On-demand press: state, independent and opposition editorials
+[*]Speaks your language — pick it once and the AI always answers in it
+[/list]
+
+[hr][/hr]
+
+[h2]How it works[/h2]
+Voices of History runs on [b]your own machine[/b]. A small companion app (the on-screen chat) connects the mod to a [b]local AI[/b] through the free [b]Player2[/b] app — nothing is sent to the cloud. One window, [b]VoicesOfHistory.exe[/b], installs the mod and starts everything.
+
+[h2]Setup (quick)[/h2]
+[olist]
+[*]Open the [b]Player2[/b] app (your local AI).
+[*]Run [b]VoicesOfHistory.exe[/b] → [b]Install / Update Mod[/b].
+[*]In the Paradox launcher, enable the mod and start the game in [b]-debug[/b].
+[*]Back in the launcher, click [b]Start Middleware[/b], then right-click a nation to begin. (Press [b]Enter[/b] to send.)
+[/olist]
+
+[b]Requires:[/b] Hearts of Iron IV [b]1.19[/b], non-Ironman, the Player2 app. Windows.
+
+[hr][/hr]
+[i]Your decisions. Your diplomacy. Your history.[/i]
