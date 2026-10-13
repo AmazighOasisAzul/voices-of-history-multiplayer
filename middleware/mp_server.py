@@ -1,11 +1,12 @@
 """
-mp_server.py - HOST-SIDE multiplayer arbiter for Voices of History (beta).
+mp_server.py - HOST-SIDE multiplayer arbiter for Voices of History.
 
-Run ON THE HOST MACHINE ONLY (via mp_main.py). It attaches to the normal
-middleware App and exposes a tiny HTTP API so client machines can use the HOST's
-AI and - more importantly - the HOST's console injector. The host stays the ONLY
-executor: every LLM call and every console injection still goes through the single
-host App instance, so the synchronized game state is only ever modified by the host.
+Run ON THE HOST MACHINE ONLY (via mp_main.py or START_MP_HOST.bat). It attaches to
+the normal middleware App and exposes a tiny HTTP API so client machines can use
+the HOST's AI and - more importantly - the HOST's console injector. The host stays
+the ONLY executor: every LLM call and every console injection still goes through
+the single host App instance, so the synchronized game state is only ever modified
+by the host.
 
 Design notes:
 - CHANNELS. "leader:<tag>" is SHARED: every player talking to the same leader
@@ -17,21 +18,26 @@ Design notes:
   the client's tag). Swaps are serialized behind llm_lock.
 - RAW LINES. Clients forward raw game.log lines and the HOST parses them with its
   own game_state module, so the wire protocol never drifts from the mod format.
+- PLAN REMINDER. The host middleware's automatic "launch a start_plan" reminders
+  only fire on its own channel names; on client decree channels the arbiter adds
+  the reminder itself from a keyword heuristic.
 
 Wire protocol (JSON over HTTP, optional X-MP-Key header):
-  GET  /ping                                             -> {"ok": true, "day": N, ...}
+  GET  /ping                                             -> {"ok": true, "version": ...}
   POST /open   {player, line}     (raw AIDIPLO_*_OPEN)   -> {"ok": true, "channel": ...}
-  POST /state  {player, line}    (raw AIDIPLO_STATE)    -> {"ok": true}
+  POST /state  {player, line}     (raw AIDIPLO_STATE)    -> {"ok": true}
   POST /send   {player, text}                            -> {"ok": true, "reply": ...}
   POST /close  {player}                                 -> {"ok": true}
 """
 import json
 import os
+import re
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import game_state as gs
 import prompts
+from mp_version import MP_VERSION, MP_PROTOCOL
 
 DEFAULT_CONFIG = {
     "enabled": True,
@@ -40,6 +46,12 @@ DEFAULT_CONFIG = {
     "max_requests_per_day": 8,
     "auto_pause": False,
 }
+
+_PLAN_WORDS = re.compile(
+    r"\b(plan|programme|program|industriali[sz]e|industriali[sz]ation|rearm|"
+    r"rearmament|mobilis[ez]e|mobilisation|mobilization|five.year|five year|"
+    r"build.up|buildup|reform|modernis[ez]e|modernis[ez]ation|expansion|"
+    r"undertaking|campaign|overhaul)\b", re.I)
 
 
 class MPServer:
@@ -84,7 +96,8 @@ class MPServer:
     def ping(self):
         with self.lock:
             players = {p: s.get("channel") for p, s in self.sessions.items()}
-        return {"ok": True, "day": self._game_day(), "players": players}
+        return {"ok": True, "version": MP_VERSION, "protocol": MP_PROTOCOL,
+                "day": self._game_day(), "players": players}
 
     def open_channel(self, player, line):
         line = line or ""
@@ -94,7 +107,6 @@ class MPServer:
             target = (op.get("target") or "").strip().upper()
             if len(target) != 3 or not target.isalpha():
                 return {"ok": False, "error": "invalid target tag"}
-            # the CLIENT's own nation comes from its submitted state, not the host's
             sess = self._session(player) or {}
             pname = (sess.get("state") or {}).get("name") or "our nation"
             channel = "leader:" + target
@@ -174,15 +186,17 @@ class MPServer:
         with self.llm_lock:
             self._note(str(player) + " -> " + sess["channel"])
             if self.auto_pause:
-                # pause BEFORE running the pipeline; unpausing stays manual (host
-                # discipline). Disabled by default: 'pause' is a toggle and we do
-                # not want to fight the host over game speed.
                 self.app._dispatch(["pause"])
+            # plan-launch reminder for client decree channels (the host
+            # middleware's own reminder only fires on its native channel names)
+            if sess["channel"].startswith("decree:") and _PLAN_WORDS.search(text):
+                text += ("\n\n[SYSTEM REMINDER: the player is asking to LAUNCH a "
+                         "long-term plan/undertaking. You MUST emit a start_plan "
+                         "action in THIS reply, with sensible 'stages' (2-4) and "
+                         "'days', plus the immediate COST.]")
             saved_state = self.app.latest_state
             try:
                 if sess.get("state"):
-                    # let the AI see the CLIENT's nation during this pipeline;
-                    # ROOT substitution in console commands also resolves to it
                     self.app.latest_state = dict(sess["state"])
                 self.app._do_llm(text, sess["channel"], sess["channel_name"],
                                  sess["system_prompt"])
@@ -262,7 +276,7 @@ class MPServer:
 
         self.httpd = ThreadingHTTPServer(("0.0.0.0", self.port), Handler)
         threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
-        print("[MP] arbiter listening on 0.0.0.0:" + str(self.port))
+        print("[MP] arbiter v" + MP_VERSION + " listening on 0.0.0.0:" + str(self.port))
         if not self.password:
             print("[MP] WARNING: no password set - anyone on your LAN can use "
                   "your AI and inject into your game.")

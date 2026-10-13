@@ -2,6 +2,7 @@
 mp_agent.py - CLIENT SIDE. Run this on every client machine (never the host):
 
     python mp_agent.py --host 192.168.1.50 --password <pw> --player Alice
+    (or use START_MP_CLIENT.bat)
 
 What it does:
 - Tails YOUR local game.log and forwards the RAW trigger lines to the host:
@@ -22,6 +23,8 @@ import threading
 import time
 import tkinter as tk
 import urllib.request
+
+from mp_version import MP_VERSION, MP_PROTOCOL
 
 MARK_STATE = "AIDIPLO_STATE|"
 MARK_OPEN = "AIDIPLO_OPEN|"
@@ -169,12 +172,19 @@ class Client:
 
         threading.Thread(target=self.tail_loop, daemon=True).start()
         pump()
-        self.ui_queue.put(("sys", "Connecting to " + self.args.host + ":" + str(self.args.port)))
-        # ping once so the user gets an early error if the host is unreachable
+        self.ui_queue.put(("sys", "Agent v" + MP_VERSION +
+                          " -> " + self.args.host + ":" + str(self.args.port)))
+
         def ping():
             try:
                 res = self.http("/ping", {})
-                self.ui_queue.put(("sys", "Host reachable. In-game day: " + str(res.get("day"))))
+                proto = res.get("protocol")
+                if proto is not None and proto != MP_PROTOCOL:
+                    self.ui_queue.put(("sys", "VERSION MISMATCH: host protocol " +
+                                      str(proto) + ", agent protocol " + str(MP_PROTOCOL) +
+                                      " - update both to the same release."))
+                self.ui_queue.put(("sys", "Host reachable (v" + str(res.get("version")) +
+                                   "). In-game day: " + str(res.get("day"))))
             except Exception as e:
                 self.ui_queue.put(("sys", "PING FAILED: " + str(e)))
         threading.Thread(target=ping, daemon=True).start()
