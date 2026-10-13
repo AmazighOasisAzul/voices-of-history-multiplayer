@@ -11,7 +11,7 @@ by the host.
 Design notes:
 - CHANNELS. "leader:<tag>" is SHARED: every player talking to the same leader
   joins the same conversation and the same treaty memory (a feature, not a bug).
-  "decree:<player>" and "life:<player>" are PER-PLAYER (private staff/leader chat).
+  "decree:<player>", "life:<player>" and "actor:<player>" are PER-PLAYER.
 - CLIENT STATE. Clients forward their own AIDIPLO_STATE line; during that
   client's pipeline the arbiter swaps it in as the App's latest_state, so the AI
   sees the CLIENT's nation (and ROOT-substitution in console commands resolves to
@@ -19,8 +19,8 @@ Design notes:
 - RAW LINES. Clients forward raw game.log lines and the HOST parses them with its
   own game_state module, so the wire protocol never drifts from the mod format.
 - PLAN REMINDER. The host middleware's automatic "launch a start_plan" reminders
-  only fire on its own channel names; on client decree channels the arbiter adds
-  the reminder itself from a keyword heuristic.
+  only fire on its own channel names; on client decree/actor channels the
+  arbiter adds the reminder itself from a keyword heuristic.
 
 Wire protocol (JSON over HTTP, optional X-MP-Key header):
   GET  /ping                                             -> {"ok": true, "version": ...}
@@ -51,7 +51,8 @@ _PLAN_WORDS = re.compile(
     r"\b(plan|programme|program|industriali[sz]e|industriali[sz]ation|rearm|"
     r"rearmament|mobilis[ez]e|mobilisation|mobilization|five.year|five year|"
     r"build.up|buildup|reform|modernis[ez]e|modernis[ez]ation|expansion|"
-    r"undertaking|campaign|overhaul)\b", re.I)
+    r"undertaking|campaign|overhaul|plot|coup|conspiracy|conspire|uprising|"
+    r"faction|overthrow)\b", re.I)
 
 
 class MPServer:
@@ -142,6 +143,17 @@ class MPServer:
             self._set_channel(player, channel, leader, system_prompt)
             self._note(str(player) + " opened Life of the Head of State")
             return {"ok": True, "channel": channel}
+        # 4) act as another figure: AIDIPLO_ACTOR_OPEN|tag=...
+        if "AIDIPLO_ACTOR_OPEN|" in line:
+            sess = self._session(player) or {}
+            st = sess.get("state") or {}
+            ptag = (gs.parse_actor_open(line) or {}).get("tag") or st.get("tag") or "ROOT"
+            pname = st.get("name") or "our nation"
+            channel = "actor:" + str(player)
+            system_prompt = prompts.build_actor_system(ptag, pname)
+            self._set_channel(player, channel, "Underground", system_prompt)
+            self._note(str(player) + " opened Act as Another Figure")
+            return {"ok": True, "channel": channel}
         return {"ok": False, "error": "unrecognized open line (use the in-game "
                 "'Talk to the Leader' or 'Head of State Office' decision first)"}
 
@@ -187,13 +199,20 @@ class MPServer:
             self._note(str(player) + " -> " + sess["channel"])
             if self.auto_pause:
                 self.app._dispatch(["pause"])
-            # plan-launch reminder for client decree channels (the host
+            # plan-launch reminder for client decree/actor channels (the host
             # middleware's own reminder only fires on its native channel names)
-            if sess["channel"].startswith("decree:") and _PLAN_WORDS.search(text):
+            ch = sess["channel"]
+            if ch.startswith("decree:") and _PLAN_WORDS.search(text):
                 text += ("\n\n[SYSTEM REMINDER: the player is asking to LAUNCH a "
                          "long-term plan/undertaking. You MUST emit a start_plan "
                          "action in THIS reply, with sensible 'stages' (2-4) and "
                          "'days', plus the immediate COST.]")
+            elif ch.startswith("actor:") and _PLAN_WORDS.search(text):
+                text += ("\n\n[SYSTEM REMINDER: if the player has described ANY "
+                         "plot, coup or undertaking - even merely planning it - "
+                         "you MUST emit a start_plan action NOW in this reply "
+                         "(stages >= 5 for a coup). Do NOT wait for a "
+                         "confirmation message.]")
             saved_state = self.app.latest_state
             try:
                 if sess.get("state"):

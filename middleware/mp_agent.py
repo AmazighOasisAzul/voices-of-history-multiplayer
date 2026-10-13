@@ -8,10 +8,13 @@ What it does:
 - Tails YOUR local game.log and forwards the RAW trigger lines to the host:
   AIDIPLO_STATE (your nation's state, so the AI sees YOUR country),
   AIDIPLO_OPEN (Talk to the Leader), AIDIPLO_DECREE_OPEN (Head of State Office),
-  AIDIPLO_LIFE_OPEN (Life of the Head of State).
+  AIDIPLO_LIFE_OPEN (Life of the Head of State),
+  AIDIPLO_ACTOR_OPEN (Act as Another Figure).
 - You type here; the HOST's AI answers and the HOST's console executes the
   effects, which reach your game through the normal multiplayer sync.
 - This machine runs no LLM and injects nothing: display only.
+
+Keys: Enter sends, Shift+Enter inserts a new line.
 
 Requirements: Python 3.10+ (tkinter, stdlib only).
 """
@@ -30,6 +33,7 @@ MARK_STATE = "AIDIPLO_STATE|"
 MARK_OPEN = "AIDIPLO_OPEN|"
 MARK_DECREE = "AIDIPLO_DECREE_OPEN|"
 MARK_LIFE = "AIDIPLO_LIFE_OPEN|"
+MARK_ACTOR = "AIDIPLO_ACTOR_OPEN|"
 
 
 def autodetect_game_log():
@@ -96,8 +100,10 @@ class Client:
                 self.post_quiet("/state", {"player": self.args.player, "line": line})
             return
         # channel opens: forward raw, host parses with its own game_state module
-        for mark, label in ((MARK_OPEN, "leader"), (MARK_DECREE, "office"),
-                            (MARK_LIFE, "life")):
+        # (MARK_ACTOR is checked FIRST: AIDIPLO_ACTOR_OPEN contains no other mark,
+        #  but keep the order explicit anyway)
+        for mark, label in ((MARK_ACTOR, "underground"), (MARK_OPEN, "leader"),
+                            (MARK_DECREE, "office"), (MARK_LIFE, "life")):
             if mark in line:
                 try:
                     res = self.http("/open", {"player": self.args.player, "line": line})
@@ -148,7 +154,10 @@ class Client:
         self.btn = tk.Button(entry_frame, text="Send", command=self.on_send)
         self.btn.pack(side="right", padx=6)
         entry_frame.pack()
-        root.bind("<Return>", lambda e: self.on_send())
+
+        # Enter sends; Shift+Enter keeps a newline (default Text binding inserts it)
+        self.entry.bind("<Return>", lambda e: (self.on_send(), "break")[1])
+        self.entry.bind("<Shift-Return>", lambda e: None)
 
         def pump():
             try:

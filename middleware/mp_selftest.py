@@ -15,6 +15,8 @@ import json
 import queue
 import sys
 import threading
+import time
+import urllib.error
 import urllib.request
 
 from mp_server import MPServer
@@ -77,13 +79,12 @@ def http(path, obj, key=None, port=TEST_PORT):
 
 def main():
     app = FakeApp()
-    srv = MPServer(app, config_path="mp_selftest_config.json")  # not read: defaults
+    srv = MPServer(app)
     srv.password = "test-key"
     srv.max_requests = 2
     srv.port = TEST_PORT
     srv.start()
-    time_sleep = __import__("time").sleep
-    time_sleep(0.3)
+    time.sleep(0.3)
 
     failures = []
 
@@ -121,8 +122,7 @@ def main():
     r = http("/send", {"player": "Alice", "text": "Hello, fuhrer."}, key="test-key")
     check("send returns reply", r.get("ok") is True and "STUB-REPLY" in r.get("reply", ""), str(r))
     text, channel, sp = app.pipeline_calls[-1]
-    check("state swapped to client nation",
-          app.latest_state == {} and text == "Hello, fuhrer.", "state not restored")
+    check("state restored after swap", app.latest_state == {} and text == "Hello, fuhrer.", "state not restored")
     check("shared leader channel memory", app.memory.get_history("leader:GER", 10)[-1]["role"] == "assistant")
 
     # 6. decree channel: per-player + plan reminder injection
@@ -133,12 +133,19 @@ def main():
     check("plan reminder injected on decree channel", "start_plan" in text2, text2)
     check("decree channel is per-player", channel2 == "decree:Bob")
 
-    # 7. budget enforcement
+    # 7. actor channel: per-player + coup reminder (stages >= 5)
+    r = http("/open", {"player": "Bob", "line": "AIDIPLO_ACTOR_OPEN|tag=POR"}, key="test-key")
+    check("actor channel opens", r.get("ok") is True and r.get("channel") == "actor:Bob", str(r))
+    http("/send", {"player": "Bob", "text": "We are plotting a coup."}, key="test-key")
+    text3, channel3, _ = app.pipeline_calls[-1]
+    check("coup reminder injected on actor channel", "start_plan" in text3 and "stages" in text3, text3)
+
+    # 8. budget enforcement
     http("/send", {"player": "Bob", "text": "another"}, key="test-key")
     r = http("/send", {"player": "Bob", "text": "over budget"}, key="test-key")
     check("budget enforced", r.get("ok") is False and "budget" in r.get("error", ""), str(r))
 
-    # 8. close
+    # 9. close
     check("close ok", http("/close", {"player": "Bob"}, key="test-key").get("ok") is True)
 
     print("")
