@@ -1,14 +1,16 @@
 """
 mp_agent.py - CLIENT SIDE. Run this on every client machine (never the host):
 
-    python mp_agent.py --host 192.168.1.50 --password <the host password> --player Alice
+    python mp_agent.py --host 192.168.1.50 --password <pw> --player Alice
 
 What it does:
-- Tails YOUR local game.log. When you use the in-game decision 'Talk to the
-  Leader (AI)', the mod writes AIDIPLO_OPEN to YOUR log; the agent forwards it
-  to the host arbiter, which opens the channel through the HOST's middleware.
+- Tails YOUR local game.log and forwards the RAW trigger lines to the host:
+  AIDIPLO_STATE (your nation's state, so the AI sees YOUR country),
+  AIDIPLO_OPEN (Talk to the Leader), AIDIPLO_DECREE_OPEN (Head of State Office),
+  AIDIPLO_LIFE_OPEN (Life of the Head of State).
 - You type here; the HOST's AI answers and the HOST's console executes the
-  effects. This machine runs no LLM and injects nothing: display only.
+  effects, which reach your game through the normal multiplayer sync.
+- This machine runs no LLM and injects nothing: display only.
 
 Requirements: Python 3.10+ (tkinter, stdlib only).
 """
@@ -21,20 +23,10 @@ import time
 import tkinter as tk
 import urllib.request
 
-MARK_OPEN = "AIDIPLO_OPEN|"
 MARK_STATE = "AIDIPLO_STATE|"
-
-
-def parse_fields(line, marker):
-    idx = line.find(marker)
-    if idx == -1:
-        return None
-    out = {}
-    for part in line[idx + len(marker):].strip().split("|"):
-        if "=" in part:
-            k, v = part.split("=", 1)
-            out[k.strip()] = v.strip()
-    return out
+MARK_OPEN = "AIDIPLO_OPEN|"
+MARK_DECREE = "AIDIPLO_DECREE_OPEN|"
+MARK_LIFE = "AIDIPLO_LIFE_OPEN|"
 
 
 def autodetect_game_log():
@@ -54,8 +46,7 @@ class Client:
     def __init__(self, args):
         self.args = args
         self.ui_queue = queue.Queue()
-        self.own_tag = ""
-        self.own_name = ""
+        self.last_state_line = ""
 
     def http(self, path, obj):
         data = json.dumps(obj).encode("utf-8")
@@ -64,7 +55,7 @@ class Client:
             headers={"Content-Type": "application/json"})
         if self.args.password:
             req.add_header("X-MP-Key", self.args.password)
-        with urllib.request.urlopen(req, timeout=300) as resp:
+        with urllib.request.urlopen(req, timeout=600) as resp:
             return json.loads(resp.read().decode("utf-8"))
 
     # ---- background: tail the local game.log ----
@@ -95,28 +86,34 @@ class Client:
             time.sleep(0.5)
 
     def handle_line(self, line):
-        st = parse_fields(line, MARK_STATE)
-        if st and st.get("tag"):
-            self.own_tag = st.get("tag", "")
-            self.own_name = st.get("name", "")
+        # state: forward (deduped) so the host's AI knows OUR nation
+        if MARK_STATE in line:
+            if line.strip() != self.last_state_line:
+                self.last_state_line = line.strip()
+                self.post_quiet("/state", {"player": self.args.player, "line": line})
             return
-        op = parse_fields(line, MARK_OPEN)
-        if op and op.get("target"):
+        # channel opens: forward raw, host parses with its own game_state module
+        for mark, label in ((MARK_OPEN, "leader"), (MARK_DECREE, "office"),
+                            (MARK_LIFE, "life")):
+            if mark in line:
+                try:
+                    res = self.http("/open", {"player": self.args.player, "line": line})
+                    if res.get("ok"):
+                        self.ui_queue.put(("sys", "Channel open (" + label + "): " +
+                                          str(res.get("channel")) + ". Type below."))
+                    else:
+                        self.ui_queue.put(("sys", "Host refused: " + str(res.get("error"))))
+                except Exception as e:
+                    self.ui_queue.put(("sys", "Cannot reach host: " + str(e)))
+                return
+
+    def post_quiet(self, path, obj):
+        def work():
             try:
-                res = self.http("/open", {
-                    "player": self.args.player,
-                    "tag": self.own_tag, "name": self.own_name,
-                    "target": op.get("target"),
-                    "tname": op.get("tname", op.get("target")),
-                    "tleader": op.get("tleader", "")})
-                if res.get("ok"):
-                    self.ui_queue.put(("sys", "Channel opened with " +
-                                       (op.get("tleader") or op.get("tname") or
-                                        op.get("target")) + ". Type below."))
-                else:
-                    self.ui_queue.put(("sys", "Host refused: " + str(res.get("error"))))
-            except Exception as e:
-                self.ui_queue.put(("sys", "Cannot reach host: " + str(e)))
+                self.http(path, obj)
+            except Exception:
+                pass
+        threading.Thread(target=work, daemon=True).start()
 
     # ---- sending ----
     def send(self, text):
@@ -127,7 +124,7 @@ class Client:
                     self.ui_queue.put(("ai", res.get("reply", "")))
                     left = res.get("requests_left")
                     if left is not None:
-                        self.ui_queue.put(("sys", "requests left today: " + str(left)))
+                        self.ui_queue.put(("sys", "requests left this in-game day: " + str(left)))
                 else:
                     self.ui_queue.put(("sys", "Host: " + str(res.get("error"))))
             except Exception as e:
@@ -145,8 +142,8 @@ class Client:
         entry_frame = tk.Frame(root)
         self.entry = tk.Text(entry_frame, width=60, height=3)
         self.entry.pack(side="left", padx=6, pady=6)
-        btn = tk.Button(entry_frame, text="Send", command=self.on_send)
-        btn.pack(side="right", padx=6)
+        self.btn = tk.Button(entry_frame, text="Send", command=self.on_send)
+        self.btn.pack(side="right", padx=6)
         entry_frame.pack()
         root.bind("<Return>", lambda e: self.on_send())
 
@@ -162,7 +159,8 @@ class Client:
                     elif kind == "me":
                         self.log.insert("end", "[" + self.args.player + "] " + payload + "\n")
                     elif kind == "busy":
-                        btn.configure(state="normal" if not payload else "disabled")
+                        self.btn.configure(state="normal" if not payload else "disabled")
+                        self.btn.configure(text="..." if payload else "Send")
                     self.log.configure(state="disabled")
                     self.log.see("end")
             except queue.Empty:
@@ -172,6 +170,14 @@ class Client:
         threading.Thread(target=self.tail_loop, daemon=True).start()
         pump()
         self.ui_queue.put(("sys", "Connecting to " + self.args.host + ":" + str(self.args.port)))
+        # ping once so the user gets an early error if the host is unreachable
+        def ping():
+            try:
+                res = self.http("/ping", {})
+                self.ui_queue.put(("sys", "Host reachable. In-game day: " + str(res.get("day"))))
+            except Exception as e:
+                self.ui_queue.put(("sys", "PING FAILED: " + str(e)))
+        threading.Thread(target=ping, daemon=True).start()
         root.mainloop()
 
     def on_send(self):

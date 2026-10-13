@@ -70,3 +70,14 @@ python main.py
   built **.exe** plus the `middleware/` and `mod/` folders.
 - `ARCHITECTURE.md` — how the mod and the middleware talk to each other.
 - License: **MIT** (see `LICENSE`).
+
+
+---
+
+## Multiplayer (experimental beta)
+
+This fork adds an experimental multiplayer mode. The host runs the AI and the
+console injector; clients forward their in-game decisions to the host over HTTP
+and get the AI's replies in a small agent window. See
+**[MULTIPLAYER.md](MULTIPLAYER.md)** for the feasibility analysis and
+**[BETA_TESTING.md](BETA_TESTING.md)** for setup and the tester checklist.
