@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "port": 8710,
+  "password": "change-me",
+  "max_requests_per_day": 8,
+  "note": "max_requests_per_day resets on each new in-game day. password is shared with the clients (send it to them privately)."
+}
